@@ -1,0 +1,6 @@
+{
+  "name": "AuraVoyage - AI Tourism Management System",
+  "description": "Premium AI-powered tourism management platform and luxury travel booking suite with intelligent itinerary planning, package discovery, multi-step bookings, customer portal, and admin analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
