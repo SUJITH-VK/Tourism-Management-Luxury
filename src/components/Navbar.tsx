@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 import { 
   Compass, 
   Search, 
@@ -15,7 +16,8 @@ import {
   LogOut, 
   MapPin,
   Calendar,
-  Layers
+  Layers,
+  Download
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -33,6 +35,7 @@ export const Navbar: React.FC = () => {
     setAuthModalOpen,
   } = useApp();
 
+  const { isInstalled, isIOS, hasPrompt, triggerInstall } = usePWAInstall();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
@@ -123,6 +126,28 @@ export const Navbar: React.FC = () => {
               <span>Admin Suite</span>
             </button>
           ) : null}
+
+          {/* PWA Install Button (desktop/tablet) */}
+          {!isInstalled && (
+            <button
+              id="nav-btn-pwa-install"
+              onClick={() => {
+                if (hasPrompt) {
+                  triggerInstall();
+                } else {
+                  // Scroll or open install modal if available
+                  const banner = document.getElementById('pwa-install-banner');
+                  if (banner) banner.scrollIntoView({ behavior: 'smooth' });
+                  else triggerInstall();
+                }
+              }}
+              title="Install AuraVoyage PWA on your device"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 hover:border-emerald-400 shadow-sm transition-all ml-1 cursor-pointer active:scale-95"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Install App</span>
+            </button>
+          )}
         </nav>
 
         {/* Right Tools & Role Switcher */}
@@ -389,11 +414,38 @@ export const Navbar: React.FC = () => {
                 setCurrentView('admin-dashboard');
                 setIsMobileMenuOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-amber-950/40 text-amber-300 border border-amber-500/30"
+              className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-amber-950/40 text-amber-300 border border-amber-500/30 min-h-[44px]"
             >
               <ShieldCheck className="w-4 h-4 text-amber-400" />
               <span>Admin Management Hub</span>
             </button>
+          )}
+
+          {/* Mobile Install App Button */}
+          {!isInstalled && (
+            <div className="pt-2 border-t border-slate-800/80">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (hasPrompt) {
+                    triggerInstall();
+                  } else {
+                    const banner = document.getElementById('pwa-banner-install-action');
+                    if (banner) banner.click();
+                    else triggerInstall();
+                  }
+                }}
+                className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/40 min-h-[44px] active:scale-[0.98] transition-transform"
+              >
+                <span className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-white" />
+                  <span>Install AuraVoyage (PWA)</span>
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-200">
+                  {isIOS ? 'iOS Safari' : 'Android / Web'}
+                </span>
+              </button>
+            </div>
           )}
         </div>
       )}

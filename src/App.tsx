@@ -8,6 +8,8 @@ import { InvoiceModal } from './components/InvoiceModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { AuthModal } from './components/AuthModal';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 // Views
 import { HomeView } from './views/HomeView';
@@ -59,7 +61,7 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#070b12] text-slate-100 selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen flex flex-col bg-[#070b12] text-slate-100 selection:bg-emerald-500 selection:text-black pb-16 md:pb-0">
       {/* Top Luxury Navigation */}
       <Navbar />
 
@@ -70,6 +72,12 @@ const MainLayout: React.FC = () => {
 
       {/* Comprehensive Footer */}
       <Footer />
+
+      {/* Mobile Bottom Navigation Dock */}
+      <MobileBottomNav />
+
+      {/* PWA In-App Install Prompt Banner */}
+      <PWAInstallBanner />
 
       {/* Global Interactive Modals & Drawers */}
       <BookingModal />

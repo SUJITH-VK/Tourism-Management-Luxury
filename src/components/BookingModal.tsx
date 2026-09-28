@@ -112,19 +112,19 @@ export const BookingModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-6 animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-3xl bg-[#0d1527] border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col my-8"
+        className="relative w-full max-w-3xl bg-[#0d1527] border border-slate-700/80 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[96vh]"
         id="booking-modal-container"
       >
         
         {/* Header with Step Indicator */}
-        <div className="px-6 py-5 bg-[#09101f] border-b border-slate-800 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-5 bg-[#09101f] border-b border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400">
               Luxury Booking Engine
             </span>
-            <h2 className="text-lg font-bold text-white leading-snug">
+            <h2 className="text-base sm:text-lg font-bold text-white leading-snug truncate max-w-[240px] sm:max-w-md">
               {step === 4 ? 'Booking Confirmed' : tour.title}
             </h2>
           </div>
@@ -132,7 +132,7 @@ export const BookingModal: React.FC = () => {
           <button
             id="close-booking-modal-button"
             onClick={closeBookingModal}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>
@@ -140,15 +140,15 @@ export const BookingModal: React.FC = () => {
 
         {/* Step Progress Bar (1 to 4) */}
         {step < 4 && (
-          <div className="px-6 py-3 bg-[#0a1122] border-b border-slate-800/80 flex items-center justify-between text-xs">
+          <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#0a1122] border-b border-slate-800/80 flex items-center justify-between text-xs">
             {[
-              { num: 1, label: 'Traveler Details' },
-              { num: 2, label: 'Travel Schedule' },
-              { num: 3, label: 'Cost & Summary' },
+              { num: 1, label: 'Guests', fullLabel: 'Traveler Details' },
+              { num: 2, label: 'Date', fullLabel: 'Travel Schedule' },
+              { num: 3, label: 'Payment', fullLabel: 'Cost & Summary' },
             ].map((s) => (
               <div 
                 key={s.num} 
-                className={`flex items-center gap-2 font-medium ${
+                className={`flex items-center gap-1.5 sm:gap-2 font-medium ${
                   step === s.num
                     ? 'text-emerald-400'
                     : step > s.num
@@ -156,7 +156,7 @@ export const BookingModal: React.FC = () => {
                     : 'text-slate-600'
                 }`}
               >
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-bold ${
                   step === s.num
                     ? 'bg-emerald-500 text-black'
                     : step > s.num
@@ -165,15 +165,18 @@ export const BookingModal: React.FC = () => {
                 }`}>
                   {s.num}
                 </span>
-                <span className="hidden sm:inline">{s.label}</span>
-                {s.num < 3 && <span className="text-slate-700 hidden sm:inline ml-2">→</span>}
+                <span className="text-[11px] sm:text-xs">
+                  <span className="sm:hidden">{s.label}</span>
+                  <span className="hidden sm:inline">{s.fullLabel}</span>
+                </span>
+                {s.num < 3 && <span className="text-slate-700 mx-1 sm:mx-2">→</span>}
               </div>
             ))}
           </div>
         )}
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[68vh] space-y-4 sm:space-y-6 scroll-touch">
           
           {/* STEP 1: Traveler Details */}
           {step === 1 && (
@@ -401,13 +404,13 @@ export const BookingModal: React.FC = () => {
                 </h4>
 
                 <div className="flex justify-between text-sm text-slate-300">
-                  <span>Package Base Price (₹{tour.pricePerPerson.toLocaleString('en-IN')} × {numTravelers})</span>
-                  <span className="font-semibold text-white">₹{basePrice.toLocaleString('en-IN')}</span>
+                  <span>Package Base Price (₹{(tour.pricePerPerson ?? 0).toLocaleString('en-IN')} × {numTravelers})</span>
+                  <span className="font-semibold text-white">₹{(basePrice ?? 0).toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="flex justify-between text-sm text-slate-300">
                   <span>Goods & Services Tax (GST 5%) + Luxury Tourism Cess</span>
-                  <span className="font-semibold text-white">₹{taxesAndFees.toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-white">₹{(taxesAndFees ?? 0).toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="flex justify-between text-sm text-emerald-400">
@@ -419,7 +422,7 @@ export const BookingModal: React.FC = () => {
                   <div>
                     <p className="text-xs text-slate-400">Total Payable</p>
                     <p className="text-xl font-bold text-emerald-400 font-display">
-                      ₹{totalAmount.toLocaleString('en-IN')}
+                      ₹{(totalAmount ?? 0).toLocaleString('en-IN')}
                     </p>
                   </div>
                   <span className="text-[11px] text-slate-400">All taxes & permits included</span>
@@ -500,7 +503,7 @@ export const BookingModal: React.FC = () => {
                 </div>
                 <div className="flex justify-between pt-1">
                   <span className="text-slate-400 text-xs">Total Amount Paid</span>
-                  <span className="font-bold text-emerald-400 text-base">₹{confirmedBookingData.totalAmount.toLocaleString('en-IN')}</span>
+                  <span className="font-bold text-emerald-400 text-base">₹{(confirmedBookingData.totalAmount ?? 0).toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
@@ -538,12 +541,12 @@ export const BookingModal: React.FC = () => {
 
         {/* Footer Navigation */}
         {step < 4 && (
-          <div className="px-6 py-4 bg-[#09101f] border-t border-slate-800 flex items-center justify-between">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 bg-[#09101f] border-t border-slate-800 flex items-center justify-between gap-3">
             {step > 1 ? (
               <button
                 type="button"
                 onClick={() => setStep((prev) => (prev - 1) as any)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-400 hover:text-white text-sm font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white text-xs sm:text-sm font-semibold transition-colors min-h-[44px] active:scale-95"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back</span>
@@ -557,7 +560,7 @@ export const BookingModal: React.FC = () => {
                 type="button"
                 id="booking-step-next-button"
                 onClick={() => setStep((prev) => (prev + 1) as any)}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shadow-md shadow-emerald-600/30 transition-all"
+                className="flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-emerald-600/30 transition-all min-h-[44px] active:scale-95"
               >
                 <span>Continue</span>
                 <ArrowRight className="w-4 h-4" />
@@ -567,10 +570,10 @@ export const BookingModal: React.FC = () => {
                 type="button"
                 id="booking-step-pay-confirm-button"
                 onClick={handleConfirmBooking}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white text-sm font-semibold shadow-lg shadow-emerald-600/30 transition-all"
+                className="flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-600/30 transition-all min-h-[44px] active:scale-95 text-center"
               >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Confirm & Authorize ₹{totalAmount.toLocaleString('en-IN')}</span>
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span className="truncate">Authorize ₹{(totalAmount ?? 0).toLocaleString('en-IN')}</span>
               </button>
             )}
           </div>

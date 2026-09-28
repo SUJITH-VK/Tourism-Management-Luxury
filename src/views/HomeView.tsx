@@ -86,13 +86,13 @@ export const HomeView: React.FC = () => {
 
           {/* Luxury Typography Headline */}
           <div className="space-y-4 max-w-4xl mx-auto">
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold font-display tracking-tight text-white leading-[1.1]">
+            <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold font-display tracking-tight text-white leading-[1.15] sm:leading-[1.1]">
               Unveil Serenity Across <br className="hidden sm:inline" />
               <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-200">
                 Bespoke Hill Stations
               </span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-sans leading-relaxed">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto font-sans leading-relaxed">
               Tailored itineraries, verified heritage tea estates, private chauffeured transfers, and instantaneous AI guidance for the discerning voyager.
             </p>
           </div>
@@ -102,7 +102,7 @@ export const HomeView: React.FC = () => {
             <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               
               {/* Destination Dropdown */}
-              <div className="bg-slate-900/80 rounded-2xl p-2.5 px-3.5 border border-slate-800 text-left">
+              <div className="bg-slate-900/80 rounded-2xl p-2.5 px-3.5 border border-slate-800 text-left min-h-[52px]">
                 <label className="block text-[10px] uppercase font-bold tracking-wider text-slate-400">
                   Destination
                 </label>
@@ -112,7 +112,7 @@ export const HomeView: React.FC = () => {
                     id="hero-destination-select"
                     value={selectedDestination}
                     onChange={(e) => setSelectedDestination(e.target.value)}
-                    className="bg-transparent text-sm font-semibold text-white focus:outline-none w-full cursor-pointer"
+                    className="bg-transparent text-sm font-semibold text-white focus:outline-none w-full cursor-pointer py-1"
                   >
                     <option value="" className="bg-slate-900 text-slate-300">All Destinations</option>
                     {destinations.map((d) => (
@@ -125,7 +125,7 @@ export const HomeView: React.FC = () => {
               </div>
 
               {/* Category Dropdown */}
-              <div className="bg-slate-900/80 rounded-2xl p-2.5 px-3.5 border border-slate-800 text-left">
+              <div className="bg-slate-900/80 rounded-2xl p-2.5 px-3.5 border border-slate-800 text-left min-h-[52px]">
                 <label className="block text-[10px] uppercase font-bold tracking-wider text-slate-400">
                   Trip Style
                 </label>
@@ -135,7 +135,7 @@ export const HomeView: React.FC = () => {
                     id="hero-category-select"
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="bg-transparent text-sm font-semibold text-white focus:outline-none w-full cursor-pointer"
+                    className="bg-transparent text-sm font-semibold text-white focus:outline-none w-full cursor-pointer py-1"
                   >
                     <option value="" className="bg-slate-900 text-slate-300">All Styles</option>
                     <option value="Hill Station" className="bg-slate-900 text-white">Hill Station & Nature</option>
@@ -147,7 +147,7 @@ export const HomeView: React.FC = () => {
               </div>
 
               {/* Budget Limit Slider */}
-              <div className="bg-slate-900/80 rounded-2xl p-2.5 px-3.5 border border-slate-800 text-left">
+              <div className="bg-slate-900/80 rounded-2xl p-2.5 px-3.5 border border-slate-800 text-left min-h-[52px]">
                 <div className="flex justify-between items-center">
                   <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
                     Max Fare
@@ -171,7 +171,7 @@ export const HomeView: React.FC = () => {
               <button
                 type="submit"
                 id="hero-search-submit-btn"
-                className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-2xl px-6 py-3 shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 text-sm transition-all group"
+                className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-2xl px-6 py-3 min-h-[52px] shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 text-sm transition-all group active:scale-[0.98] cursor-pointer"
               >
                 <span>Find Journeys</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -269,7 +269,7 @@ export const HomeView: React.FC = () => {
                     {dest.state || dest.region.split(',')[1]?.trim() || dest.region}
                   </span>
                   <span className="text-xs text-slate-300">
-                    From <strong className="text-white font-semibold">₹{dest.startingPrice.toLocaleString('en-IN')}</strong>
+                    From <strong className="text-white font-semibold">₹{(dest.startingPrice ?? 0).toLocaleString('en-IN')}</strong>
                   </span>
                 </div>
 
@@ -405,10 +405,10 @@ export const HomeView: React.FC = () => {
                       </span>
                       <div className="flex items-baseline gap-1">
                         <span className="text-lg font-bold text-emerald-400 font-display">
-                          ₹{tour.pricePerPerson.toLocaleString('en-IN')}
+                          ₹{(tour.pricePerPerson ?? 0).toLocaleString('en-IN')}
                         </span>
                         <span className="text-xs text-slate-500 line-through">
-                          ₹{Math.round(tour.pricePerPerson * 1.2).toLocaleString('en-IN')}
+                          ₹{Math.round((tour.pricePerPerson ?? 0) * 1.2).toLocaleString('en-IN')}
                         </span>
                       </div>
                     </div>

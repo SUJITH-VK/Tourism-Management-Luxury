@@ -132,7 +132,7 @@ export const GlobalSearchModal: React.FC = () => {
                           {dest.name}
                         </h4>
                         <span className="text-xs text-emerald-400 font-semibold">
-                          From ₹{dest.startingPrice.toLocaleString('en-IN')}
+                          From ₹{(dest.startingPrice ?? 0).toLocaleString('en-IN')}
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 truncate">{dest.region}</p>
@@ -181,7 +181,7 @@ export const GlobalSearchModal: React.FC = () => {
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-sm font-bold text-emerald-400 block font-display">
-                        ₹{t.pricePerPerson.toLocaleString('en-IN')}
+                        ₹{(t.pricePerPerson ?? 0).toLocaleString('en-IN')}
                       </span>
                       <span className="text-[10px] text-slate-500">per traveler</span>
                     </div>

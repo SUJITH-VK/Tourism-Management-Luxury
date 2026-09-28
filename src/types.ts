@@ -194,3 +194,35 @@ export interface SearchFilterState {
   sortBy: 'recommended' | 'price-asc' | 'price-desc' | 'rating' | 'duration';
   availableOnly: boolean;
 }
+
+export interface AiAnalystMetric {
+  label: string;
+  value: string;
+  trend?: string;
+  status?: 'positive' | 'warning' | 'neutral';
+}
+
+export interface AiAnalystInsight {
+  category: string;
+  observation: string;
+  impact: string;
+}
+
+export interface AiAnalystRecommendation {
+  title: string;
+  action: string;
+  expectedOutcome: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface ManagementAiAnalysis {
+  timestamp: string;
+  query: string;
+  focusArea: string;
+  summary: string;
+  keyMetrics: AiAnalystMetric[];
+  insights: AiAnalystInsight[];
+  recommendations: AiAnalystRecommendation[];
+  forecast?: string;
+}
+

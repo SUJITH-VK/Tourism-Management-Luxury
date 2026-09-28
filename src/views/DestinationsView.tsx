@@ -93,7 +93,7 @@ export const DestinationsView: React.FC = () => {
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 block uppercase font-bold">Starts from</span>
                     <span className="text-lg font-bold text-white font-display">
-                      ₹{dest.startingPrice.toLocaleString('en-IN')}
+                      ₹{(dest.startingPrice ?? 0).toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>

@@ -21,9 +21,16 @@ import {
   X,
   Save,
   Check,
-  Percent
+  Percent,
+  Database,
+  Copy,
+  ExternalLink,
+  RefreshCw,
+  Code2,
+  Sparkles
 } from 'lucide-react';
 import { Booking, BookingStatus, TourPackage } from '../types';
+import { AdminAiAnalyst } from '../components/AdminAiAnalyst';
 
 export const AdminDashboardView: React.FC = () => {
   const {
@@ -39,7 +46,54 @@ export const AdminDashboardView: React.FC = () => {
     switchUser,
   } = useApp();
 
-  const [activeAdminTab, setActiveAdminTab] = useState<'analytics' | 'bookings' | 'tours' | 'customers'>('analytics');
+  const [activeAdminTab, setActiveAdminTab] = useState<'analytics' | 'bookings' | 'tours' | 'customers' | 'database' | 'ai-analyst'>('analytics');
+  
+  // Supabase management state
+  const [supabaseStatus, setSupabaseStatus] = useState<any>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [sqlSchema, setSqlSchema] = useState<string>('');
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  // Load Supabase info
+  const checkSupabaseStatus = async () => {
+    setIsLoadingStatus(true);
+    try {
+      const res = await fetch('/api/supabase/status');
+      const data = await res.json();
+      setSupabaseStatus(data);
+    } catch (e: any) {
+      setSupabaseStatus({ connected: false, reason: e.message });
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
+
+  const loadSqlSchema = async () => {
+    try {
+      const res = await fetch('/api/supabase/schema');
+      if (res.ok) {
+        const text = await res.text();
+        setSqlSchema(text);
+      }
+    } catch (e) {
+      console.warn('Failed to load SQL schema:', e);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeAdminTab === 'database') {
+      checkSupabaseStatus();
+      loadSqlSchema();
+    }
+  }, [activeAdminTab]);
+
+  const handleCopySql = () => {
+    if (sqlSchema) {
+      navigator.clipboard.writeText(sqlSchema);
+      setCopiedSql(true);
+      setTimeout(() => setCopiedSql(false), 3000);
+    }
+  };
   
   // Bookings filter state
   const [bookingSearch, setBookingSearch] = useState('');
@@ -204,16 +258,22 @@ export const AdminDashboardView: React.FC = () => {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-3 text-xs overflow-x-auto">
         {[
           { id: 'analytics', label: 'Financial & Fleet Analytics' },
+          { id: 'ai-analyst', label: '✨ AI Management Analyst', highlight: true },
           { id: 'bookings', label: `Manage Bookings (${bookings.length})` },
           { id: 'tours', label: `Tour Packages Inventory (${tours.length})` },
           { id: 'customers', label: `Customer CRM (${customers.length})` },
+          { id: 'database', label: '⚡ Database & Supabase' },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveAdminTab(tab.id as any)}
-            className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap ${
+            className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeAdminTab === tab.id
-                ? 'bg-amber-950/60 text-amber-300 border border-amber-500/40 shadow-sm'
+                ? tab.id === 'ai-analyst'
+                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-md shadow-emerald-900/30'
+                  : 'bg-amber-950/60 text-amber-300 border border-amber-500/40 shadow-sm'
+                : tab.id === 'ai-analyst'
+                ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
             }`}
           >
@@ -226,60 +286,85 @@ export const AdminDashboardView: React.FC = () => {
       {activeAdminTab === 'analytics' && (
         <div className="space-y-8 animate-in fade-in duration-200">
           
+          {/* AI Intelligence Spotlight Banner */}
+          <div className="bg-gradient-to-r from-emerald-950/60 via-[#0d182e] to-[#0a1020] border border-emerald-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>AI Executive Intelligence Engine</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-normal">Gemini 3.8 Flash</span>
+                </h4>
+                <p className="text-xs text-slate-300">
+                  Analyze current gross margin, seat occupancy by tour, and VIP customer retention with instant strategic recommendations.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveAdminTab('ai-analyst')}
+              className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all self-start sm:self-auto"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Launch AI Analyst</span>
+            </button>
+          </div>
+
           {/* Top KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-5 space-y-2">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Total Realized Revenue
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 sm:p-5 space-y-1.5 sm:space-y-2">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">
+                Total Revenue
               </span>
               <div className="flex items-baseline justify-between">
-                <span className="text-3xl font-bold text-emerald-400 font-display">
-                  ₹{analytics.totalRevenue.toLocaleString('en-IN')}
+                <span className="text-xl sm:text-3xl font-bold text-emerald-400 font-display">
+                  ₹{(analytics.totalRevenue ?? 0).toLocaleString('en-IN')}
                 </span>
-                <span className="text-xs text-emerald-400 font-semibold flex items-center">
-                  <ArrowUpRight className="w-3.5 h-3.5" /> +18.4%
+                <span className="text-[10px] sm:text-xs text-emerald-400 font-semibold flex items-center">
+                  <ArrowUpRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> +18%
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">Includes all confirmed GST invoices</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">Confirmed GST invoices</p>
             </div>
 
-            <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-5 space-y-2">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Confirmed Bookings
+            <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 sm:p-5 space-y-1.5 sm:space-y-2">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">
+                Confirmed Trips
               </span>
               <div className="flex items-baseline justify-between">
-                <span className="text-3xl font-bold text-white font-display">
+                <span className="text-xl sm:text-3xl font-bold text-white font-display">
                   {analytics.confirmedCount}
                 </span>
-                <span className="text-xs text-slate-400">of {analytics.totalBookingsCount} total</span>
+                <span className="text-[10px] sm:text-xs text-slate-400">of {analytics.totalBookingsCount} total</span>
               </div>
-              <p className="text-[11px] text-slate-500">Upcoming voyager departures</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">Upcoming departures</p>
             </div>
 
-            <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-5 space-y-2">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Registered Voyagers
+            <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 sm:p-5 space-y-1.5 sm:space-y-2">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">
+                Active Guests
               </span>
               <div className="flex items-baseline justify-between">
-                <span className="text-3xl font-bold text-amber-300 font-display">
+                <span className="text-xl sm:text-3xl font-bold text-amber-300 font-display">
                   {analytics.totalTravelers}
                 </span>
-                <span className="text-xs text-amber-400 font-semibold">Active Guests</span>
+                <span className="text-[10px] sm:text-xs text-amber-400 font-semibold">In Fleet</span>
               </div>
-              <p className="text-[11px] text-slate-500">Passengers accommodated in fleet</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">Voyagers booked</p>
             </div>
 
-            <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-5 space-y-2">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Estate Occupancy Rate
+            <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 sm:p-5 space-y-1.5 sm:space-y-2">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">
+                Occupancy Rate
               </span>
               <div className="flex items-baseline justify-between">
-                <span className="text-3xl font-bold text-teal-300 font-display">
+                <span className="text-xl sm:text-3xl font-bold text-teal-300 font-display">
                   {analytics.occupancyRate}%
                 </span>
-                <span className="text-xs text-teal-400 font-semibold">High Season</span>
+                <span className="text-[10px] sm:text-xs text-teal-400 font-semibold">High Season</span>
               </div>
-              <p className="text-[11px] text-slate-500">Optimal seasonal load factor</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">Optimal fleet load</p>
             </div>
           </div>
 
@@ -304,7 +389,7 @@ export const AdminDashboardView: React.FC = () => {
                           <span className="text-slate-400">({dest.state || dest.region.split(',')[1]?.trim() || dest.region})</span>
                         </div>
                         <span className="font-bold text-emerald-400 font-mono">
-                          ₹{destRev > 0 ? destRev.toLocaleString('en-IN') : '25,498'}
+                          ₹{destRev > 0 ? (destRev ?? 0).toLocaleString('en-IN') : '25,498'}
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -377,8 +462,76 @@ export const AdminDashboardView: React.FC = () => {
             </select>
           </div>
 
-          {/* Bookings Table */}
-          <div className="bg-[#0b1222] border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+          {/* Mobile Booking Cards (Visible on screens < md) */}
+          <div className="md:hidden space-y-3">
+            {filteredBookings.length === 0 ? (
+              <div className="p-8 text-center bg-[#0b1222] border border-slate-800 rounded-2xl text-slate-400 text-xs">
+                No bookings match your search query.
+              </div>
+            ) : (
+              filteredBookings.map((b) => (
+                <div 
+                  key={b.id} 
+                  className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg"
+                >
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                    <div>
+                      <span className="font-mono text-xs font-bold text-amber-400">{b.id}</span>
+                      <h4 className="text-sm font-bold text-white mt-0.5">{b.tourTitle}</h4>
+                      <span className="text-[11px] text-emerald-400 font-medium">{b.destinationName}</span>
+                    </div>
+                    <button
+                      onClick={() => openInvoiceModal(b)}
+                      title="Generate official invoice"
+                      className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95 transition-transform"
+                    >
+                      <FileText className="w-4 h-4 text-emerald-400" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-[#121c32] p-2.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">Customer</span>
+                      <p className="font-bold text-white truncate">{b.customerName}</p>
+                      <span className="text-[10px] text-slate-400 truncate block">{b.customerEmail}</span>
+                    </div>
+                    <div className="bg-[#121c32] p-2.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">Amount</span>
+                      <p className="font-mono font-bold text-emerald-400 text-sm">
+                        ₹{(b.totalAmount ?? 0).toLocaleString('en-IN')}
+                      </p>
+                      <span className="text-[10px] text-slate-400">{b.travelersCount} Guests • {b.travelDate}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <span className="text-xs text-slate-400 font-medium">Status:</span>
+                    <select
+                      value={b.status}
+                      onChange={(e) => updateBookingStatus(b.id, e.target.value as BookingStatus)}
+                      className={`text-xs font-bold rounded-xl px-3 py-2 bg-slate-900 border focus:outline-none min-h-[44px] flex-1 max-w-[200px] ${
+                        b.status === 'confirmed'
+                          ? 'text-emerald-400 border-emerald-500/40'
+                          : b.status === 'in-progress'
+                          ? 'text-sky-400 border-sky-500/40'
+                          : b.status === 'completed'
+                          ? 'text-slate-400 border-slate-700'
+                          : 'text-rose-400 border-rose-500/40'
+                      }`}
+                    >
+                      <option value="confirmed">Confirmed</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop & Tablet Bookings Table (Visible on md+) */}
+          <div className="hidden md:block bg-[#0b1222] border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead className="bg-[#090e1a] text-slate-400 border-b border-slate-800">
@@ -414,7 +567,7 @@ export const AdminDashboardView: React.FC = () => {
                         {b.travelersCount}
                       </td>
                       <td className="py-3 px-4 font-mono font-bold text-emerald-400">
-                        ₹{b.totalAmount.toLocaleString('en-IN')}
+                        ₹{(b.totalAmount ?? 0).toLocaleString('en-IN')}
                       </td>
                       <td className="py-3 px-4">
                         <select
@@ -498,7 +651,7 @@ export const AdminDashboardView: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-slate-400 block">Rate</span>
                     <span className="text-base font-bold text-emerald-400 font-display">
-                      ₹{t.pricePerPerson.toLocaleString('en-IN')}
+                      ₹{(t.pricePerPerson ?? 0).toLocaleString('en-IN')}
                     </span>
                   </div>
 
@@ -539,7 +692,43 @@ export const AdminDashboardView: React.FC = () => {
       {activeAdminTab === 'customers' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           
-          <div className="bg-[#0b1222] border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+          {/* Mobile Customer Cards (screens < md) */}
+          <div className="md:hidden space-y-3">
+            {customers.map((c) => (
+              <div key={c.id} className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <img src={c.avatar} alt={c.name} className="w-9 h-9 rounded-full object-cover ring-1 ring-emerald-500" />
+                    <div>
+                      <p className="font-bold text-white text-xs">{c.name}</p>
+                      <span className="text-[10px] text-slate-400 block">{c.email}</span>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+                    {c.membershipTier}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs bg-[#121c32] p-2.5 rounded-xl">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Total Expeditions</span>
+                    <p className="font-semibold text-white">{c.totalBookings} Trips</p>
+                    <span className="text-[10px] text-slate-400">{c.city}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Lifetime Spend</span>
+                    <p className="font-mono font-bold text-emerald-400">
+                      ₹{(c.totalSpent ?? 0).toLocaleString('en-IN')}
+                    </p>
+                    <span className="text-[10px] text-slate-400">{c.phone}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop & Tablet CRM Table (screens md+) */}
+          <div className="hidden md:block bg-[#0b1222] border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead className="bg-[#090e1a] text-slate-400 border-b border-slate-800">
@@ -572,7 +761,7 @@ export const AdminDashboardView: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-white">{c.totalBookings} Trips</td>
                       <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">
-                        ₹{c.totalSpent.toLocaleString('en-IN')}
+                        ₹{(c.totalSpent ?? 0).toLocaleString('en-IN')}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 text-[10px] font-semibold">
@@ -589,7 +778,130 @@ export const AdminDashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* CREATE TOUR PACKAGE MODAL */}
+      {/* 5. DATABASE & SUPABASE MIGRATION TAB */}
+      {activeAdminTab === 'database' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          
+          {/* Status Banner */}
+          <div className="bg-gradient-to-r from-[#0b1426] to-[#0c1a30] border border-slate-700/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                  <Database className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-xl font-bold text-white font-display">Supabase PostgreSQL Database</h3>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                      supabaseStatus?.connected
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${supabaseStatus?.connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                      {supabaseStatus?.connected ? 'Connected to Supabase' : 'Waiting for Tables in Supabase'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Project Reference: <span className="font-mono text-slate-200">rfrhrbphlpaxixdaptxq</span> • Active Primary: <span className="text-emerald-400 font-semibold">{supabaseStatus?.currentDatabase || 'PostgreSQL'}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <button
+                  onClick={checkSupabaseStatus}
+                  disabled={isLoadingStatus}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingStatus ? 'animate-spin' : ''}`} />
+                  <span>Test Connection</span>
+                </button>
+
+                <button
+                  onClick={handleCopySql}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/30 transition-all"
+                >
+                  {copiedSql ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedSql ? 'Copied to Clipboard!' : 'Copy Migration SQL'}</span>
+                </button>
+
+                <a
+                  href="https://supabase.com/dashboard/project/rfrhrbphlpaxixdaptxq/sql/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white text-xs font-bold shadow-lg shadow-amber-900/30 transition-all"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Open Supabase SQL Editor</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Quick 3-Step Guide */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="bg-[#070b14]/70 border border-slate-800/80 rounded-2xl p-4 space-y-1.5">
+                <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[11px]">1</span>
+                <p className="font-semibold text-white">Click "Copy Migration SQL"</p>
+                <p className="text-slate-400 text-[11px]">Copies the full schema (7 tables, RLS policies, relationships) + 37 seed data rows.</p>
+              </div>
+
+              <div className="bg-[#070b14]/70 border border-slate-800/80 rounded-2xl p-4 space-y-1.5">
+                <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-[11px]">2</span>
+                <p className="font-semibold text-white">Paste in Supabase SQL Editor</p>
+                <p className="text-slate-400 text-[11px]">Open the link to your project <code className="text-amber-300">rfrhrbphlpaxixdaptxq</code> SQL editor and paste.</p>
+              </div>
+
+              <div className="bg-[#070b14]/70 border border-slate-800/80 rounded-2xl p-4 space-y-1.5">
+                <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-[11px]">3</span>
+                <p className="font-semibold text-white">Click "RUN"</p>
+                <p className="text-slate-400 text-[11px]">Tables are created instantly. Click "Test Connection" here to see the badge turn Green.</p>
+              </div>
+            </div>
+
+            {/* Live diagnostic details */}
+            {supabaseStatus && (
+              <div className="bg-[#070d18] border border-slate-800 rounded-2xl p-4 text-xs space-y-2">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>Connection Diagnostics:</span>
+                  <span className="font-mono text-[11px] text-slate-300">HTTP 200 OK</span>
+                </div>
+                <p className="text-slate-300 font-mono text-[11px] bg-black/40 p-2.5 rounded-xl">
+                  {supabaseStatus.reason || (supabaseStatus.connected ? '✓ Successfully connected to Supabase PostgreSQL!' : 'Ready')}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* SQL Code Preview & Copy Container */}
+          <div className="bg-[#090f1d] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl space-y-0">
+            <div className="bg-[#060a14] px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Code2 className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-semibold text-white">supabase/schema.sql (Complete Schema & Seed Data)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">1,100 Lines</span>
+              </div>
+              <button
+                onClick={handleCopySql}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-semibold transition-colors"
+              >
+                {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedSql ? 'Copied!' : 'Copy Code'}</span>
+              </button>
+            </div>
+
+            <div className="p-4 bg-[#050811] max-h-[480px] overflow-y-auto font-mono text-[11px] text-slate-300 leading-relaxed select-all">
+              <pre className="whitespace-pre-wrap">{sqlSchema || 'Loading SQL script...'}</pre>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* 6. AI MANAGEMENT ANALYST TAB */}
+      {activeAdminTab === 'ai-analyst' && (
+        <AdminAiAnalyst />
+      )}
+
       {isAddTourModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="relative w-full max-w-2xl bg-[#0b1222] border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6">

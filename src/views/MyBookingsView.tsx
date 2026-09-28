@@ -103,34 +103,34 @@ export const MyBookingsView: React.FC = () => {
       </div>
 
       {/* Customer Loyalty Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Bookings</span>
-          <p className="text-2xl font-bold text-white font-display">{myBookings.length}</p>
-          <span className="text-xs text-emerald-400">{myBookings.filter(b => b.status === 'confirmed').length} upcoming</span>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-1">
+          <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">Total Bookings</span>
+          <p className="text-xl sm:text-2xl font-bold text-white font-display">{myBookings.length}</p>
+          <span className="text-[10px] sm:text-xs text-emerald-400 block truncate">{myBookings.filter(b => b.status === 'confirmed').length} upcoming</span>
         </div>
 
-        <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Cumulative Spend</span>
-          <p className="text-2xl font-bold text-emerald-400 font-display">
-            ₹{totalSpent.toLocaleString('en-IN')}
+        <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-1">
+          <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">Cumulative Spend</span>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-400 font-display">
+            ₹{(totalSpent ?? 0).toLocaleString('en-IN')}
           </p>
-          <span className="text-xs text-slate-400">All tax invoices cleared</span>
+          <span className="text-[10px] sm:text-xs text-slate-400 block truncate">All GST invoices cleared</span>
         </div>
 
-        <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Membership Tier</span>
-          <p className="text-xl font-bold text-amber-300 font-display flex items-center gap-1.5">
-            <Award className="w-5 h-5 text-amber-400" />
-            <span>{currentUser.membershipTier}</span>
+        <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-1">
+          <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">Membership Tier</span>
+          <p className="text-lg sm:text-xl font-bold text-amber-300 font-display flex items-center gap-1.5 truncate">
+            <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" />
+            <span className="truncate">{currentUser.membershipTier}</span>
           </p>
-          <span className="text-xs text-slate-400">Complimentary Chauffeur</span>
+          <span className="text-[10px] sm:text-xs text-slate-400 block truncate">Complimentary Chauffeur</span>
         </div>
 
-        <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Voyage Reward Credits</span>
-          <p className="text-2xl font-bold text-teal-300 font-display">2,850 pts</p>
-          <span className="text-xs text-slate-400">Redeemable on next booking</span>
+        <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-1">
+          <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">Reward Credits</span>
+          <p className="text-xl sm:text-2xl font-bold text-teal-300 font-display">2,850 pts</p>
+          <span className="text-[10px] sm:text-xs text-slate-400 block truncate">Redeemable on next booking</span>
         </div>
       </div>
 
@@ -253,7 +253,7 @@ export const MyBookingsView: React.FC = () => {
                         Total Amount Paid
                       </span>
                       <span className="text-xl font-bold text-emerald-400 font-display">
-                        ₹{b.totalAmount.toLocaleString('en-IN')}
+                        ₹{(b.totalAmount ?? 0).toLocaleString('en-IN')}
                       </span>
                       <span className="text-[11px] text-slate-500 ml-1">
                         ({b.paymentMethod})

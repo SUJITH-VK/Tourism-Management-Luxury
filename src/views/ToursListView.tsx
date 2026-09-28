@@ -334,7 +334,7 @@ export const ToursListView: React.FC = () => {
                         Per Traveler
                       </span>
                       <span className="text-lg font-bold text-emerald-400 font-display">
-                        ₹{tour.pricePerPerson.toLocaleString('en-IN')}
+                        ₹{(tour.pricePerPerson ?? 0).toLocaleString('en-IN')}
                       </span>
                     </div>
 

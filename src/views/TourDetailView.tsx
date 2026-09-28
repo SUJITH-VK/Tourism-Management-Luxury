@@ -386,7 +386,7 @@ export const TourDetailView: React.FC = () => {
                 </span>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-3xl font-bold font-display text-white">
-                    ₹{tour.pricePerPerson.toLocaleString('en-IN')}
+                    ₹{(tour.pricePerPerson ?? 0).toLocaleString('en-IN')}
                   </span>
                   <span className="text-xs text-slate-400">/ person</span>
                 </div>
@@ -452,16 +452,16 @@ export const TourDetailView: React.FC = () => {
               <div className="pt-4 border-t border-slate-800 space-y-1 text-xs">
                 <div className="flex justify-between text-slate-400">
                   <span>Fare ({guestCountPreview} Guests)</span>
-                  <span>₹{(tour.pricePerPerson * guestCountPreview).toLocaleString('en-IN')}</span>
+                  <span>₹{((tour.pricePerPerson ?? 0) * guestCountPreview).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>GST (5%)</span>
-                  <span>₹{Math.round(tour.pricePerPerson * guestCountPreview * 0.05).toLocaleString('en-IN')}</span>
+                  <span>₹{Math.round((tour.pricePerPerson ?? 0) * guestCountPreview * 0.05).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-slate-800">
                   <span>Total Payable</span>
                   <span className="text-emerald-400 font-display">
-                    ₹{Math.round(tour.pricePerPerson * guestCountPreview * 1.05).toLocaleString('en-IN')}
+                    ₹{Math.round((tour.pricePerPerson ?? 0) * guestCountPreview * 1.05).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>

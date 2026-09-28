@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
   UserRole, 
   UserSession, 
@@ -9,7 +9,7 @@ import {
   AppNotification, 
   SearchFilterState, 
   BookingStatus 
-} from '../types';
+} from '../types.ts';
 import { 
   INITIAL_USER, 
   ADMIN_USER, 
@@ -18,12 +18,13 @@ import {
   INITIAL_BOOKINGS, 
   INITIAL_CUSTOMERS, 
   INITIAL_NOTIFICATIONS 
-} from '../data/initialData';
+} from '../data/initialData.ts';
 
 interface AppContextType {
   currentUser: UserSession;
   role: UserRole;
   switchUser: (newRole: UserRole) => void;
+  setCurrentUserDirectly: (user: UserSession) => void;
   currentView: string;
   setCurrentView: (view: string) => void;
   selectedTour: TourPackage | null;
@@ -82,6 +83,10 @@ interface AppContextType {
 
   // User Profile
   updateUserProfile: (profileData: Partial<UserSession>) => void;
+
+  // Cloud SQL Database synchronization
+  isDbConnected: boolean;
+  refreshFromDatabase: () => Promise<void>;
 }
 
 const defaultFilterState: SearchFilterState = {
@@ -111,13 +116,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedTourId, setSelectedTourId] = useState<string | null>(null);
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
 
-  // Collections
+  // Collections (initialized with fallbacks, synced live with Cloud SQL)
   const [tours, setTours] = useState<TourPackage[]>(() => {
     const saved = localStorage.getItem('auravoyage_tours');
     return saved ? JSON.parse(saved) : INITIAL_TOURS;
   });
 
-  const [destinations] = useState<Destination[]>(INITIAL_DESTINATIONS);
+  const [destinations, setDestinations] = useState<Destination[]>(INITIAL_DESTINATIONS);
 
   const [bookings, setBookings] = useState<Booking[]>(() => {
     const saved = localStorage.getItem('auravoyage_bookings');
@@ -139,6 +144,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
   });
 
+  const [isDbConnected, setIsDbConnected] = useState<boolean>(true);
+
   // Modal states
   const [bookingModalTour, setBookingModalTour] = useState<TourPackage | null>(null);
   const [invoiceModalBooking, setInvoiceModalBooking] = useState<Booking | null>(null);
@@ -151,7 +158,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Search and filters
   const [filterState, setFilterState] = useState<SearchFilterState>(defaultFilterState);
 
-  // Sync to local storage
+  // Sync state to local storage
   useEffect(() => {
     localStorage.setItem('auravoyage_user', JSON.stringify(currentUser));
   }, [currentUser]);
@@ -175,6 +182,75 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('auravoyage_notifications', JSON.stringify(notifications));
   }, [notifications]);
+
+  // Synchronize with Cloud SQL PostgreSQL Database
+  const refreshFromDatabase = useCallback(async () => {
+    try {
+      // 1. Destinations
+      const destRes = await fetch('/api/destinations');
+      if (destRes.ok) {
+        const data = await destRes.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setDestinations(data);
+        }
+      }
+
+      // 2. Tours
+      const toursRes = await fetch('/api/tours');
+      if (toursRes.ok) {
+        const data = await toursRes.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setTours(data);
+        }
+      }
+
+      // 3. Bookings
+      const bkgRes = await fetch('/api/bookings');
+      if (bkgRes.ok) {
+        const data = await bkgRes.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setBookings(data);
+        }
+      }
+
+      // 4. Customers
+      const custRes = await fetch('/api/customers');
+      if (custRes.ok) {
+        const data = await custRes.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setCustomers(data);
+        }
+      }
+
+      // 5. Notifications
+      const notifRes = await fetch('/api/notifications');
+      if (notifRes.ok) {
+        const data = await notifRes.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setNotifications(data);
+        }
+      }
+
+      // 6. User Wishlist
+      if (currentUser?.id) {
+        const wishRes = await fetch(`/api/wishlist/${encodeURIComponent(currentUser.id)}`);
+        if (wishRes.ok) {
+          const data = await wishRes.json();
+          if (Array.isArray(data)) {
+            setWishlist(data);
+          }
+        }
+      }
+
+      setIsDbConnected(true);
+    } catch (err) {
+      console.warn('Database live sync warning (using cached data):', err);
+    }
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    refreshFromDatabase();
+  }, [refreshFromDatabase]);
 
   // Derived selected items
   const selectedTour = tours.find((t) => t.id === selectedTourId) || null;
@@ -203,10 +279,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const setCurrentUserDirectly = (user: UserSession) => {
+    setCurrentUser(user);
+    // sync with backend
+    fetch('/api/users/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        avatar: user.avatar,
+        role: user.role,
+      }),
+    }).catch((e) => console.error('Failed to sync user to database:', e));
+  };
+
   const toggleWishlist = (id: string) => {
     setWishlist((prev) => 
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+
+    if (currentUser?.id) {
+      fetch('/api/wishlist/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, tourId: id }),
+      }).catch((e) => console.error('Failed to toggle wishlist in database:', e));
+    }
   };
 
   const isWishlisted = (id: string) => wishlist.includes(id);
@@ -215,10 +316,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications((prev) => 
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    fetch(`/api/notifications/${id}/read`, { method: 'PATCH' }).catch((e) =>
+      console.error('Failed to mark notification read in database:', e)
+    );
   };
 
   const markAllNotificationsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    fetch('/api/notifications/read-all', { method: 'POST' }).catch((e) =>
+      console.error('Failed to mark all notifications read in database:', e)
+    );
   };
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
@@ -243,7 +350,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFilterState(defaultFilterState);
   };
 
-  // Create booking
+  // Create booking (persists to PostgreSQL)
   const createBooking = (data: Omit<Booking, 'id' | 'invoiceNumber' | 'createdAt'>): Booking => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const newId = `AV-${randomNum}`;
@@ -261,10 +368,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTours((prev) =>
       prev.map((t) => {
         if (t.id === data.tourId) {
-          return {
+          const updated = {
             ...t,
             availableSeats: Math.max(0, t.availableSeats - data.travelersCount),
           };
+          // Persist tour seat update
+          fetch(`/api/tours/${t.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated),
+          }).catch((err) => console.error('Failed to sync seat update:', err));
+          return updated;
         }
         return t;
       })
@@ -286,15 +400,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCustomers((prev) =>
       prev.map((c) => {
         if (c.id === data.customerId) {
-          return {
+          const updated = {
             ...c,
             totalBookings: c.totalBookings + 1,
             totalSpent: c.totalSpent + data.totalAmount,
           };
+          fetch('/api/customers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated),
+          }).catch((err) => console.error('Failed to sync customer stats:', err));
+          return updated;
         }
         return c;
       })
     );
+
+    // Persist booking to PostgreSQL
+    fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBooking),
+    }).catch((err) => console.error('Failed to save booking to database:', err));
 
     return newBooking;
   };
@@ -303,6 +430,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBookings((prev) =>
       prev.map((b) => (b.id === bookingId ? { ...b, status } : b))
     );
+    fetch(`/api/bookings/${bookingId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).catch((err) => console.error('Failed to update booking status in database:', err));
   };
 
   const cancelBooking = (bookingId: string) => {
@@ -315,16 +447,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
+    fetch(`/api/bookings/${bookingId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'cancelled' }),
+    }).catch((err) => console.error('Failed to cancel booking in database:', err));
+
     const booking = bookings.find((b) => b.id === bookingId);
     if (booking) {
       // restore seats
       setTours((prev) =>
         prev.map((t) => {
           if (t.id === booking.tourId) {
-            return {
+            const restored = {
               ...t,
               availableSeats: Math.min(t.totalSeats, t.availableSeats + booking.travelersCount),
             };
+            fetch(`/api/tours/${t.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(restored),
+            }).catch((err) => console.error('Failed to restore seats:', err));
+            return restored;
           }
           return t;
         })
@@ -343,7 +487,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Tour management
+  // Tour management (Admin)
   const addTour = (tourData: Omit<TourPackage, 'id'>): TourPackage => {
     const newId = `tour-custom-${Date.now()}`;
     const newTour: TourPackage = {
@@ -351,6 +495,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: newId,
     };
     setTours((prev) => [newTour, ...prev]);
+
+    fetch('/api/tours', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTour),
+    }).catch((err) => console.error('Failed to add tour to database:', err));
+
     return newTour;
   };
 
@@ -358,14 +509,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTours((prev) =>
       prev.map((t) => (t.id === tourId ? { ...t, ...updatedData } : t))
     );
+
+    fetch(`/api/tours/${tourId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData),
+    }).catch((err) => console.error('Failed to update tour in database:', err));
   };
 
   const deleteTour = (tourId: string) => {
     setTours((prev) => prev.filter((t) => t.id !== tourId));
+
+    fetch(`/api/tours/${tourId}`, {
+      method: 'DELETE',
+    }).catch((err) => console.error('Failed to delete tour from database:', err));
   };
 
   const updateUserProfile = (data: Partial<UserSession>) => {
-    setCurrentUser((prev) => ({ ...prev, ...data }));
+    setCurrentUser((prev) => {
+      const updated = { ...prev, ...data };
+      fetch('/api/users/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: updated.id,
+          email: updated.email,
+          name: updated.name,
+          phone: updated.phone,
+          avatar: updated.avatar,
+          role: updated.role,
+        }),
+      }).catch((err) => console.error('Failed to sync profile update:', err));
+      return updated;
+    });
   };
 
   return (
@@ -374,6 +550,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser,
         role,
         switchUser,
+        setCurrentUserDirectly,
         currentView,
         setCurrentView,
         selectedTour,
@@ -417,6 +594,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setFilterState,
         resetFilters,
         updateUserProfile,
+        isDbConnected,
+        refreshFromDatabase,
       }}
     >
       {children}

@@ -151,12 +151,12 @@ export const InvoiceModal: React.FC = () => {
               </div>
               <div className="p-3.5 space-y-2 text-xs">
                 <div className="flex justify-between text-slate-700">
-                  <span>Tour Package Base (₹{booking.pricePerPerson.toLocaleString('en-IN')} × {booking.travelersCount} guests)</span>
-                  <span className="font-semibold text-slate-900">₹{booking.basePrice.toLocaleString('en-IN')}</span>
+                  <span>Tour Package Base (₹{(booking.pricePerPerson ?? 0).toLocaleString('en-IN')} × {booking.travelersCount} guests)</span>
+                  <span className="font-semibold text-slate-900">₹{(booking.basePrice ?? 0).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between text-slate-700">
                   <span>Goods & Services Tax (GST @ 5%) + Luxury Tourism Fund</span>
-                  <span className="font-semibold text-slate-900">₹{booking.taxesAndFees.toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-slate-900">₹{(booking.taxesAndFees ?? 0).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between text-emerald-700 font-medium">
                   <span>Complimentary Executive Chauffeur & Welcome Hamper</span>
@@ -169,7 +169,7 @@ export const InvoiceModal: React.FC = () => {
                   <span className="text-[11px] text-slate-500">Method: {booking.paymentMethod}</span>
                 </div>
                 <span className="text-lg font-bold text-slate-900 font-display">
-                  ₹{booking.totalAmount.toLocaleString('en-IN')}
+                  ₹{(booking.totalAmount ?? 0).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

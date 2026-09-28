@@ -12,7 +12,33 @@
     background-color: #070b12;
     color: #e2e8f0;
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    padding-top: env(safe-area-inset-top);
   }
+
+  /* Prevent iOS automatic zoom on focus while retaining clean design */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  @media (min-width: 640px) {
+    input, select, textarea {
+      font-size: 0.875rem !important; /* 14px on tablets & desktops */
+    }
+  }
+}
+
+/* Safe area utilities for standalone mobile PWA */
+.safe-pb {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+}
+.safe-pt {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+}
+
+/* Momentum scrolling on iOS devices */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Custom subtle scrollbar */

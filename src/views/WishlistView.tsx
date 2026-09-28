@@ -100,7 +100,7 @@ export const WishlistView: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-bold block">Rate</span>
                     <span className="text-lg font-bold text-emerald-400 font-display">
-                      ₹{tour.pricePerPerson.toLocaleString('en-IN')}
+                      ₹{(tour.pricePerPerson ?? 0).toLocaleString('en-IN')}
                     </span>
                   </div>
 
